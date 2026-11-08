@@ -1,0 +1,52 @@
+import { api } from "./core";
+
+export type Task = {
+  id: number;
+  /** null = backlog item on a project, not yet scheduled to a day. */
+  period_start: string | null;
+  project_id: number | null;
+  title: string;
+  description: string | null;
+  completed_at: string | null;
+  sort_order: number;
+};
+
+export type MoveToBacklogResult = {
+  moved: Task[];
+};
+
+export type ReorderEntry = { id: number; sort_order: number };
+
+export const tasks = {
+  list: () => api<Task[]>("/api/v1/tasks"),
+  create: (
+    periodStart: string | null,
+    title: string,
+    projectId?: number | null,
+    description?: string | null,
+    sessionId?: number,
+    completed?: boolean,
+  ) =>
+    api<Task>("/api/v1/tasks", {
+      method: "POST",
+      body: JSON.stringify({ periodStart, title, projectId, description, sessionId, completed }),
+    }),
+  update: (id: number, details: {
+    title?: string;
+    description?: string | null;
+    periodStart?: string | null;
+    completed?: boolean;
+    sessionId?: number;
+    sortOrder?: number;
+  }) =>
+    api<Task>(`/api/v1/tasks/${id}`, { method: "PATCH", body: JSON.stringify(details) }),
+  reorder: (entries: ReorderEntry[]) =>
+    api<void>("/api/v1/tasks/0", { method: "PATCH", body: JSON.stringify({ reorder: entries }) }),
+  backlog: () => api<Task[]>("/api/v1/tasks/backlog"),
+  movePastToBacklog: (before: string) =>
+    api<MoveToBacklogResult>("/api/v1/tasks/backlog", {
+      method: "POST",
+      body: JSON.stringify({ before }),
+    }),
+  remove: (id: number) => api<void>(`/api/v1/tasks/${id}`, { method: "DELETE" }),
+};
